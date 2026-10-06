@@ -19,9 +19,12 @@ const GHOSTS_CB = ['#56b4e9', '#e69f00', '#f0e442', '#009e73', '#cc79a7'].map(he
 export const GHOST_SHAPES = [SH.CIRCLE, SH.TRIANGLE, SH.SQUARE, SH.DIAMOND, SH.STAR];
 export const GHOST_NAMES = ['Kreis', 'Dreieck', 'Quadrat', 'Raute', 'Stern'];
 
-const CH_NORMAL = ['#3ec7ff', '#ff8a2a', '#55ff8a', '#ff5fae', '#ffe84a', '#a87bff', '#e8f0ff', '#ff4848'].map(hex);
-const CH_CB = ['#56b4e9', '#e69f00', '#009e73', '#cc79a7', '#f0e442', '#0072b2', '#ffffff', '#d55e00'].map(hex);
-export const CH_SHAPES = [SH.CIRCLE, SH.TRIANGLE, SH.SQUARE, SH.DIAMOND, SH.STAR, SH.HEXAGON, SH.CROSS, SH.RING];
+// Channel hues deliberately avoid the ghost hues for the frequently used
+// channels (0 = silver, 1 = red, 2 = green, 3 = violet); channels are also
+// marked by k+1 pips, so they never depend on colour or glyph alone.
+const CH_NORMAL = ['#e4eaff', '#ff4848', '#55ff8a', '#a87bff', '#ffe84a', '#4f7dff', '#ff5fae', '#3ec7ff'].map(hex);
+const CH_CB = ['#ffffff', '#d55e00', '#009e73', '#cc79a7', '#f0e442', '#0072b2', '#e69f00', '#56b4e9'].map(hex);
+export const CH_SHAPES = [SH.HEXAGON, SH.CROSS, SH.RING, SH.STAR, SH.TRIANGLE, SH.SQUARE, SH.DIAMOND, SH.CIRCLE];
 
 export function palette(colorblind) {
   return {

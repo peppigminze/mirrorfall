@@ -6,7 +6,7 @@
 
 import { compileLevel } from '../sim/level.js';
 import { Timeline, rebuildCanon } from '../sim/timeline.js';
-import { createWorld, step, sigOf, G_STATUS, G_STATUS_ARG, G_FAIL, G_TICK, G_NRUN, R_SIZE, R_PX, R_PY, R_SUSP } from '../sim/world.js';
+import { createWorld, step, sigOf, packedOf, divergenceKind, G_STATUS, G_STATUS_ARG, G_FAIL, G_TICK, G_NRUN, R_SIZE, R_PX, R_PY, R_SUSP, R_ACT } from '../sim/world.js';
 import {
   LOOP_TICKS, TICK_HZ, SU, TILE_PX, ST_RUNNING, ST_WON, ST_CAUGHT, ST_PARADOX, ST_TIMEOUT, MAX_GHOSTS, ALARM_TICKS,
   EV_DOOR_OPEN, EV_DOOR_CLOSE, EV_PLATE_ON, EV_PLATE_OFF, EV_SWITCH, EV_COIN_PICK, EV_COIN_THROW, EV_COIN_LAND,
@@ -43,6 +43,8 @@ export class GameSession {
     this.history = new Int32Array(this.size * (LOOP_TICKS + 1));
     this.liveInputs = new Uint8Array(LOOP_TICKS);
     this.liveSig = new Uint32Array(LOOP_TICKS);
+    this.livePacked = new Uint32Array(LOOP_TICKS);
+    this.liveAct = new Int32Array(LOOP_TICKS);
     this.inputsBuf = new Uint8Array(5);
     this.acc = 0;
     this.stats = { alarms: 0, paradoxes: 0, loops: 0, log: [] };
@@ -95,6 +97,8 @@ export class GameSession {
     w.recordEvents = !quiet;
     step(w, buf);
     this.liveSig[t] = sigOf(w, live);
+    this.livePacked[t] = packedOf(w, live);
+    this.liveAct[t] = s[this.ctx.lay.R + live * R_SIZE + R_ACT];
     this.history.set(s, (t + 1) * this.size);
     this.endTick = t + 1;
     if (!quiet) this.handleEvents(w.events, live);
@@ -124,16 +128,36 @@ export class GameSession {
       this.fx.paradoxRunner = arg;
       this.fx.glitch = 1; this.fx.trauma = Math.min(1, this.fx.trauma + 0.9);
       this.paradoxGhost = arg;
-      this.hud.banner('ZEITPARADOX', `Geist ${arg + 1}: ${FAIL_TEXT[s[G_FAIL]] || 'Zeitlinie gebrochen'} — Zeitlinie bricht ab Geist ${arg + 1}`, 'paradox');
+      this.hud.banner('ZEITPARADOX', `${this.explainParadox(arg)} — die Zeitlinie bricht ab Geist ${arg + 1}. ⌫ macht es rückgängig.`, 'paradox');
       this.audio.sfx('paradox');
       return;
     }
     if (st === ST_TIMEOUT) {
-      const committed = this.timeline.commit(this.liveInputs.slice(), this.liveSig.slice());
+      const committed = this.timeline.commit(this.liveInputs.slice(), this.liveSig.slice(), { packed: this.livePacked.slice(), act: this.liveAct.slice() });
       this.stats.log.push(committed ? 'ghost' : 'full');
       if (!committed) this.hud.banner('ZEITLINIE VOLL', `Maximal ${MAX_GHOSTS} Geister — ⌫ macht die letzte Schleife rückgängig`, 'info');
       this.beginRewind();
     }
+  }
+
+  /** Human-readable cause of a paradox at ghost j. */
+  explainParadox(j) {
+    const s = this.world.s, fail = s[G_FAIL];
+    const name = `Geist ${j + 1}`;
+    if (fail && fail !== FAIL_DIVERGED) return `${name} wurde ${FAIL_TEXT[fail]} — das ist früher nie passiert`;
+    const run = this.timeline.runs[j];
+    const t = s[G_TICK] - 1;
+    if (!run || !run.packed) return `${name}: die Vergangenheit hat sich verändert`;
+    const b = this.ctx.lay.R + j * R_SIZE;
+    const kind = divergenceKind(packedOf(this.world, j), s[b + R_ACT], run.packed[t], run.act[t]);
+    return {
+      blocked: `${name} wurde aufgehalten — sein Weg ist jetzt anders`,
+      coinMissing: `${name} findet seine Münze nicht mehr — jemand war schneller`,
+      coinExtra: `${name} hat plötzlich eine Münze zu viel`,
+      loot: `${name}: die Beute ist nicht mehr, wo sie war`,
+      interaction: `${name}: Schalter oder Wurf haben jetzt ein anderes Ergebnis`,
+      unknown: `${name}: die Vergangenheit hat sich verändert`,
+    }[kind];
   }
 
   /** Skip the rest of the loop: simulate the remaining ticks with idle input. */

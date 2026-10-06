@@ -73,10 +73,11 @@ export class Timeline {
   pushHistory() { this.history.push(this.runs.slice()); if (this.history.length > 64) this.history.shift(); }
 
   /** Live run reached the loop end: becomes a ghost. */
-  commit(inputs, canon) {
+  /** extra: optional { packed: Uint32Array, act: Int32Array } per tick (for paradox explanations). */
+  commit(inputs, canon, extra = {}) {
     if (this.full) return false;
     this.pushHistory();
-    this.runs.push({ inputs, canon });
+    this.runs.push({ inputs, canon, ...extra });
     return true;
   }
   /** Paradox at ghost j: the timeline breaks from this ghost on. */

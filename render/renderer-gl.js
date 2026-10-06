@@ -185,6 +185,11 @@ export class RendererGL {
       d[o + 8] = rot; d[o + 9] = shape; d[o + 10] = emis; d[o + 11] = param;
       n++;
     };
+    // k+1 pips under a channel glyph: shape- and colour-independent channel id.
+    const pips = (x, y, ch, col, a = 1) => {
+      const n = ch + 1, w = (n - 1) * 3.2;
+      for (let k = 0; k < n; k++) add(x - w / 2 + k * 3.2, y, 1.15, 1.15, col, a, 30, 1);
+    };
     const t = v.time;
     const black = [0, 0, 0];
     const white = [1, 1, 1];
@@ -203,8 +208,9 @@ export class RendererGL {
     // Plates.
     for (const P of v.plates) {
       const c = chan[P.ch];
-      add(P.x, P.y, 13, 13, P.pressed ? c : [c[0] * 0.25, c[1] * 0.25, c[2] * 0.25], 1, 37, P.pressed ? 0.55 : 0.1);
-      add(P.x, P.y, 5.5, 5.5, P.pressed ? white : c, 1, CH_SHAPES[P.ch], P.pressed ? 1 : 0.85);
+      add(P.x, P.y, 13, 13, P.pressed ? [c[0] * 0.6, c[1] * 0.6, c[2] * 0.6] : [c[0] * 0.22, c[1] * 0.22, c[2] * 0.22], 1, 37, P.pressed ? 0.3 : 0.08);
+      add(P.x, P.y - 2, 5, 5, c, 1, CH_SHAPES[P.ch], P.pressed ? 1 : 0.8);
+      pips(P.x, P.y + 7.5, P.ch, c);
     }
     // Switches.
     for (const S of v.switches) {
@@ -213,7 +219,8 @@ export class RendererGL {
       add(S.x, S.y, 11, 11, c, 0.8, 38, 0.6, 0, 1.5);
       const ang = S.on ? -0.6 : -2.55;
       add(S.x + Math.cos(ang) * 5, S.y + Math.sin(ang) * 5, 7, 2.5, S.on ? c : [0.6, 0.65, 0.8], 1, 34, S.on ? 1 : 0.2, ang);
-      add(S.x, S.y + 6, 3.5, 3.5, c, 1, CH_SHAPES[S.ch], 1);
+      add(S.x, S.y + 5, 3.2, 3.2, c, 1, CH_SHAPES[S.ch], 1);
+      pips(S.x, S.y + 11, S.ch, c);
     }
     // Terminals + vault.
     for (const T of v.terminals) {
@@ -248,6 +255,7 @@ export class RendererGL {
         add(D.x, D.y + 16 - len / 2, 1.2, len / 2, c, 1, 32, 1);
       }
       add(D.x, D.y, 5, 5, c, 0.6 + 0.4 * (1 - o), CH_SHAPES[D.ch], 1);
+      if (D.horiz) pips(D.x, D.y - 10, D.ch, c, 0.9); else pips(D.x + 10, D.y, D.ch, c, 0.9);
       if (D.inv) add(D.x, D.y, 9, 9, c, 0.7, 31, 1, 0, 1.2);   // inverted door marker (ring)
     }
     // Platforms.
@@ -342,6 +350,12 @@ export class RendererGL {
         const pr = 20 + 5 * Math.sin(t * 25);
         add(r.x, r.y, pr, pr, [1, 0.1, 0.8], 1, 31, 1, 0, 3);
         add(r.x, r.y, 34, 34, [1, 0.1, 0.8], 0.6, 33, 1);
+      }
+      if (r.live && r.alive) {
+        // "You" marker: bobbing white chevron + thin white ring (distinct from every ghost).
+        const bob = Math.sin(t * 4) * 2;
+        add(r.x, r.y - 24 + bob, 4.5, 4.5, white, 0.95, SH.TRIANGLE, 1, Math.PI);
+        add(r.x, r.y, 13.5, 13.5, white, 0.8, 31, 1, 0, 1);
       }
       if (fx.ready && r.live) {
         const pr = 18 + 4 * Math.sin(t * 5);

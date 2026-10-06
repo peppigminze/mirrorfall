@@ -143,7 +143,8 @@ export class Renderer2D {
       g.fillStyle = P.pressed ? rgbCss(pal.channel[P.ch], 0.9) : 'rgba(40,50,70,1)';
       g.fillRect(P.x - 12, P.y - 12, 24, 24);
       g.fillStyle = P.pressed ? '#fff' : rgbCss(pal.channel[P.ch], 0.9);
-      drawGlyph(g, CH_SHAPES[P.ch], P.x, P.y, 6); g.fill();
+      drawGlyph(g, CH_SHAPES[P.ch], P.x, P.y - 2, 5); g.fill();
+      for (let k = 0; k <= P.ch; k++) g.fillRect(P.x - P.ch * 1.6 + k * 3.2 - 1, P.y + 7, 2, 2);
     }
     for (const S of v.switches) {
       g.fillStyle = '#2a3350'; g.fillRect(S.x - 10, S.y - 10, 20, 20);
@@ -258,6 +259,10 @@ export class Renderer2D {
       g.fillStyle = rgbCss(c, ghost ? 0.5 : 1);
       g.beginPath(); g.arc(r.x, r.y, 10, 0, 7); g.fill();
       g.fillStyle = '#0a0c14'; drawGlyph(g, GHOST_SHAPES[r.i], r.x, r.y, 5); g.fill();
+      if (r.live && r.alive) {
+        g.fillStyle = '#fff';
+        g.beginPath(); const by = r.y - 22 + Math.sin(v.time * 4) * 2; g.moveTo(r.x - 5, by - 4); g.lineTo(r.x + 5, by - 4); g.lineTo(r.x, by + 3); g.closePath(); g.fill();
+      }
       g.strokeStyle = rgbCss(c); g.lineWidth = 2;
       g.beginPath(); g.arc(r.x, r.y, 12, r.face - 0.6, r.face + 0.6); g.stroke();
       if (r.susp > 0) {

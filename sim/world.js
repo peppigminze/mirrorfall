@@ -154,13 +154,31 @@ const centerCoord = (p) => ((p + HALF_SU) / SU) | 0;
 const mixAct = (act, code) => hash32((act ^ Math.imul(code, 0x9e3779b1)) >>> 0) | 0;
 
 /** Runner signature for paradox detection (position, loot, coins, alive, interaction hash). */
-export function runnerSig(s, b) {
-  const packed = (s[b + R_PX] | (s[b + R_PY] << 10) | (s[b + R_CARRY] << 20) |
+/** Un-hashed observable runner state (used to explain paradoxes to the player). */
+export function runnerPacked(s, b) {
+  return (s[b + R_PX] | (s[b + R_PY] << 10) | (s[b + R_CARRY] << 20) |
     (s[b + R_COINS] << 21) | (s[b + R_ALIVE] << 23)) >>> 0;
-  return hash32((packed ^ Math.imul(s[b + R_ACT], 0x85ebca6b)) >>> 0);
+}
+export function runnerSig(s, b) {
+  return hash32((runnerPacked(s, b) ^ Math.imul(s[b + R_ACT], 0x85ebca6b)) >>> 0);
 }
 
 export function sigOf(w, i) { return runnerSig(w.s, w.ctx.lay.R + i * R_SIZE); }
+export function packedOf(w, i) { return runnerPacked(w.s, w.ctx.lay.R + i * R_SIZE); }
+
+/**
+ * Explain why ghost j diverged: compare its current observable state with the
+ * recorded one (packed + interaction hash). Returns a reason code.
+ */
+export function divergenceKind(nowPacked, nowAct, wasPacked, wasAct) {
+  const pos = (p) => p & 0xfffff, carry = (p) => (p >>> 20) & 1, coins = (p) => (p >>> 21) & 3;
+  if (pos(nowPacked) !== pos(wasPacked)) return 'blocked';
+  if (coins(nowPacked) < coins(wasPacked)) return 'coinMissing';
+  if (coins(nowPacked) > coins(wasPacked)) return 'coinExtra';
+  if (carry(nowPacked) !== carry(wasPacked)) return 'loot';
+  if (nowAct !== wasAct) return 'interaction';
+  return 'unknown';
+}
 
 /** Direction from an input mask, fixed priority U > D > L > R, or -1. */
 export function maskDir(m) {

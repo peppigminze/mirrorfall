@@ -131,12 +131,14 @@ try {
         if (s.state === 'paradox') break;
       }
       const before = s.timeline.ghostCount;
+      const banner = document.querySelector('.hud-banner .big')?.textContent, why = document.querySelector('.hud-banner .sub')?.textContent;
       for (let k = 0; k < 400 && s.state !== 'ready'; k++) s.update(1 / 60);
-      return { seen, before, after: s.timeline.ghostCount, banner: document.querySelector('.hud-banner .big')?.textContent, paradoxes: s.stats.paradoxes };
+      return { seen, before, after: s.timeline.ghostCount, banner, why, paradoxes: s.stats.paradoxes };
     });
     check('Paradox: wird ausgelöst', r.seen.includes('paradox'), r.seen.join('→'));
     check('Paradox: Zeitlinie bricht ab Geist 1 (Geister 1 → 0)', r.before === 1 && r.after === 0, `${r.before}→${r.after}`);
     check('Paradox: Zähler erhöht', r.paradoxes === 1);
+    check('Paradox: Ursache wird erklärt (Münze weg)', /findet seine Münze nicht mehr/.test(r.why || ''), r.why);
     await page.close();
   }
 
