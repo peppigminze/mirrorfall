@@ -272,3 +272,20 @@ offen berichten.
 | `boundaries` | Importgrenzen, verbotene APIs in `sim/` | keine Verstöße |
 | `bench-sim` | Ticks/s der Simulation | Report |
 | `browser` (Playwright) | Seite laden, Menü, Level spielen, Screenshots, Frame-Time-Report | keine Konsolenfehler |
+
+---
+
+## 9. Änderungslog (Abweichungen während der Umsetzung)
+
+| Phase | Änderung | Grund |
+|---|---|---|
+| 1 | Läufer-Signatur enthält zusätzlich einen *Interaktions-Ergebnis-Hash* | „Schalter jetzt AUS statt AN“ muss ein Paradox sein, obwohl die Position gleich bleibt |
+| 2 | Wachen stellen nach dem Untersuchen Wartezeit **und Blickrichtung** ihres Postens wieder her | Fehler, vom Solver aufgedeckt (unbewachte Terminals nach einem Köder) |
+| 2 | Halte-Rollen werfen keine Münzen; Köder-Rolle zieht sich nach dem Wurf per verschachteltem A* zurück | sauberes Rollenmodell; Werfer wurde sonst von der neugierigen Wache entdeckt |
+| 2 | Paradox-Fallen basieren auf **verbrauchbaren** Zuständen (Münzen) | Tür-/Schalter-Fallen sind per Timing umgehbar (Verzögerungs-Check des Bots) |
+| 2 | Pruning: von früheren Geistern eingesteckte Münzen | Beweis „falsche Reihenfolge“ wird strukturell und schnell |
+| 3 | Kamera mit Mindest-Kachelgröße und Läufer-Verfolgung | Hochformat-Handys hatten 13-px-Kacheln |
+| 3 | URL-Overrides `?q=`, `?r=`; getrennte CPU-Messung | Tests ohne GPU (SwiftShader) |
+| 5 | Daily-Solver nur mit Knoten-Budgets; Replay-Referenz = Datum·32 + Kandidat | identischer Raum auf jedem Gerät, Replays ohne erneutes Lösen |
+| Final | Partikel zeichnen nur den lebenden Ringbereich; Final-Pass ohne Aberration spart Abtastungen | Pass-Profiling |
+| Final | Neue Kanalpalette + Zählpunkte, „Du“-Marker, Paradox-Ursachen, L5 neu | Selbst-Review (siehe REPORT.md) |
