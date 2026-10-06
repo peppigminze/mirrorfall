@@ -42,6 +42,9 @@ for (const f of files) {
   const src = readFileSync(f, 'utf8');
   const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
   for (const imp of imports(src)) {
+    // Site-root URLs ('/sim/…') appear only in browser-side code strings of the
+    // Playwright test (page.evaluate) — they are project files, not libraries.
+    if (imp.startsWith('/') && rel.startsWith(join('tools', 'tests'))) continue;
     if (!imp.startsWith('.')) {
       // Only Node built-ins, and only in Node CLI tools (tools/**/*.mjs) — no external libraries anywhere.
       check(`${rel}: keine externen Libraries`, imp.startsWith('node:') && rel.startsWith('tools') && rel.endsWith('.mjs'), imp);
