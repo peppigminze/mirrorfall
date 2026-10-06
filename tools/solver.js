@@ -274,7 +274,7 @@ export function planRun(ctx, ghostRuns, ghostCanon, goal, opts = {}) {
         if (L.obj[cell] !== O_TERMINAL) continue;
       } else if (a >= A_THROW) {
         if (s[lb + R_COINS] <= 0 || L.obj[cell] === O_SWITCH || L.obj[cell] === O_TERMINAL) continue;
-        if (goal.kind === 'lure') continue;          // lure throws happen in the tail
+        if (goal.kind !== 'final') continue;         // helpers throw only via the lure role (in its tail)
       }
       const child = { ctx, s: s.slice(), canon: ghostCanon, recordEvents: false, events: [] };
       advance(child, a);
@@ -303,7 +303,7 @@ export function planRun(ctx, ghostRuns, ghostCanon, goal, opts = {}) {
 }
 
 function isGoal(ctx, s, lb, goal) {
-  if (goal.kind === 'reach' && goal.notBefore && s[G_TICK] < goal.notBefore) return false;
+  if (goal.notBefore && s[G_TICK] < goal.notBefore) return false;
   if (s[lb + R_MOV] !== -1 || s[lb + R_RIDE] !== -1) return false;
   const c = s[lb + R_TY] * GRID_W + s[lb + R_TX];
   if (c !== goal.cell) return false;
@@ -366,9 +366,11 @@ function verifyTail(ctx, ghostRuns, ghostCanon, prefix, t, goal) {
 function optimisticPass(ctx, ghostRuns, ghostCanon) {
   const L = ctx.L, lay = ctx.lay;
   const everOpen = new Uint8Array(L.doors.length);
+  const coinGone = new Uint8Array(L.coins.length);
   let vaultEver = 0, termEver = 0;
   const note = (s) => {
     for (let d = 0; d < L.doors.length; d++) if (s[lay.DR + d]) everOpen[d] = 1;
+    for (let k = 0; k < L.coins.length; k++) if (!s[lay.CS + k]) coinGone[k] = 1;
     if (s[G_VAULT_OPEN]) vaultEver = 1;
     if (s[G_TERMS]) termEver = 1;
   };
@@ -390,7 +392,7 @@ function optimisticPass(ctx, ghostRuns, ghostCanon) {
     }
   }
   const vaultOk = vaultEver || termEver;
-  return (c) => {
+  const pass = (c) => {
     const t = L.tile[c];
     if (t === T_WALL) return false;
     if (t === T_CHASM) return L.platformAt[c] >= 0;
@@ -398,6 +400,8 @@ function optimisticPass(ctx, ghostRuns, ghostCanon) {
     if (t === T_VAULT) return vaultOk;
     return true;
   };
+  pass.coinGone = coinGone;
+  return pass;
 }
 
 function finalReachable(ctx, pass) {
@@ -438,7 +442,8 @@ export function solve(def, opts = {}) {
         const role = seq[seq.length - 1];
         const pass = optimisticPass(ctx, prev.runs, prev.canon);
         const reach = distField([L.spawn], pass);
-        if (reach[role.cell] < 0) { stats.pruned++; }
+        // A coin an earlier ghost already pocketed can never be used without a paradox.
+        if (reach[role.cell] < 0 || (role.kind === 'lure' && pass.coinGone[role.coin])) { stats.pruned++; }
         else {
           stats.plans++;
           const p = planRun(ctx, prev.runs, prev.canon, role, { maxExpansions: opts.roleExpansions ?? 6000 });
@@ -519,8 +524,12 @@ export function planSequence(def, roleKeys, opts = {}) {
   const all = deriveRoles(L);
   const runs = [], canon = [];
   for (let i = 0; i < roleKeys.length; i++) {
-    const role = all.find((r) => r.key === roleKeys[i]);
-    if (!role) return { ok: false, stage: i, reason: 'unbekannte Rolle' };
+    const base = all.find((r) => r.key === roleKeys[i]);
+    if (!base) return { ok: false, stage: i, reason: 'unbekannte Rolle' };
+    const role = i === 0 && opts.firstNotBefore ? { ...base, notBefore: opts.firstNotBefore } : base;
+    if (role.kind === 'lure' && optimisticPass(ctx, runs, canon).coinGone[role.coin]) {
+      return { ok: false, stage: i, reason: `Münze ${role.coin + 1} wurde von einem früheren Geist eingesteckt` };
+    }
     const p = planRun(ctx, runs, canon, role, { maxExpansions: opts.roleExpansions ?? 20000 });
     if (!p.inputs) return { ok: false, stage: i, reason: `Rolle „${role.label}“ nicht planbar (${p.fail})` };
     runs.push(p.inputs); canon.push(p.canon);

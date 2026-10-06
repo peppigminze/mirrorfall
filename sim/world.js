@@ -497,7 +497,10 @@ export function step(w, inputs) {
               if (s[tb + TC_STATE] === 2 && s[tb + TC_EC] === cell) s[tb + TC_STATE] = 0;
             }
           } else {
-            s[b + GD_MODE] = GM_PATROL; s[b + GD_TIMER] = 0;
+            // Back on the route: resume the waypoint's wait and look direction.
+            const idx = s[b + GD_IDX];
+            s[b + GD_MODE] = GM_PATROL; s[b + GD_TIMER] = G.waits[idx];
+            if (G.looks[idx] >= 0) s[b + GD_FACE] = G.looks[idx];
           }
         } else {
           bfsGuard(ctx, s, tgt);

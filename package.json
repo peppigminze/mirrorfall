@@ -1,0 +1,13 @@
+{
+  "name": "mirrorfall",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MIRRORFALL — Zeitschleifen-Heist im Browser (WebGL2, WebAudio, deterministische Simulation). Keine Abhängigkeiten.",
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node tools/tests/run-all.mjs",
+    "test:quick": "node tools/tests/run-all.mjs --quick",
+    "test:browser": "node tools/tests/browser.mjs"
+  }
+}
