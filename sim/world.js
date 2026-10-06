@@ -26,7 +26,7 @@ import {
   EV_LASER_ON, EV_PLATFORM_GO, EV_SPOTTED, EV_BUMP,
 } from './constants.js';
 import { DIR_X, DIR_Y, DIR_SCALE, DIR_COUNT } from './dirtable.js';
-import { hash32, fnv1a } from './rng.js';
+import { hash32, fnv1a, key53 } from './rng.js';
 
 // ---------------------------------------------------------------------------
 // State layout
@@ -142,6 +142,9 @@ export function cloneWorld(w) {
 
 /** Deterministic 32-bit hash of the full state. */
 export function hashWorld(w) { return fnv1a(w.s); }
+
+/** 53-bit key of a raw state array (solver duplicate detection). */
+export function key53Of(s) { return key53(s); }
 
 // ---------------------------------------------------------------------------
 // Small helpers
