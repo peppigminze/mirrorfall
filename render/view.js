@@ -271,14 +271,18 @@ export function occupancy(L, cur, lay) {
  * zoom to a minimum tile size and follow the focus point (clamped to the
  * world). Returns { scale, offX, offY } in target pixels.
  */
-export function cameraFit(W, H, pxPerCss, focus) {
+export function cameraFit(W0, H0, pxPerCss, focus, insets) {
+  // Optional insets (CSS px) reserve screen space for UI panels (editor).
+  const il = insets ? insets.l * pxPerCss : 0, ir = insets ? insets.r * pxPerCss : 0;
+  const it = insets ? insets.t * pxPerCss : 0, ib = insets ? insets.b * pxPerCss : 0;
+  const W = Math.max(64, W0 - il - ir), H = Math.max(64, H0 - it - ib);
   const fit = Math.min(W / WORLD_W, H / WORLD_H);
   const minScale = (26 * pxPerCss) / TILE_PX;          // ≥ 26 CSS px per tile
   // never zoom further than "world height fills the screen"
   const scale = Math.max(fit, Math.min(minScale, H / WORLD_H));
   const ww = WORLD_W * scale, wh = WORLD_H * scale;
   const fx = focus ? focus.x : WORLD_W / 2, fy = focus ? focus.y : WORLD_H / 2;
-  let offX = ww <= W ? (W - ww) / 2 : Math.min(0, Math.max(W - ww, W / 2 - fx * scale));
-  let offY = wh <= H ? (H - wh) / 2 : Math.min(0, Math.max(H - wh, H / 2 - fy * scale));
+  const offX = il + (ww <= W ? (W - ww) / 2 : Math.min(0, Math.max(W - ww, W / 2 - fx * scale)));
+  const offY = it + (wh <= H ? (H - wh) / 2 : Math.min(0, Math.max(H - wh, H / 2 - fy * scale)));
   return { scale, offX, offY };
 }

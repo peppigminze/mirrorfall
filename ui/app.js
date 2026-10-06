@@ -105,7 +105,8 @@ export class App {
     const c0 = performance.now();
     this.input.poll();
     const active = this.session || this.attract;
-    if (active) {
+    if (this.editor && this.editor.active) this.editor.frame(dt);
+    else if (active) {
       if (this.session && !this.paused) active.update(dt);
       else if (!this.session) active.update(dt);
       active.render(this.paused ? 0 : dt);
@@ -148,7 +149,7 @@ export class App {
     this.paused = false;
     this.current = { def, ...opts };
     this.session = this.makeSession(def, { rival: opts.rival || null, playback: opts.playback || null, mode: opts.mode || 'campaign' });
-    this.input.gameActive = !opts.playback;
+    this.input.gameActive = true;
     this.hud.show(true);
     this.updateTouch();
     this.audio.music?.start?.();
@@ -164,10 +165,7 @@ export class App {
 
   onGameEvent(type, payload) {
     if (type === 'pause') return this.pause();
-    if (type === 'playbackDone') {
-      if (this.attract && this.attract === this.session) return;
-      return;
-    }
+    if (type === 'playbackDone') return this.showPlaybackDone(payload);
     if (type === 'win') return this.showResult(payload);
   }
 
@@ -194,7 +192,7 @@ export class App {
   resume() {
     this.menus.clearAll();
     this.paused = false;
-    this.input.gameActive = !(this.current && this.current.playback);
+    this.input.gameActive = true;
     this.input.clearHeld();
     this.updateTouch();
   }
@@ -305,6 +303,24 @@ export class App {
             button(cur.mode === 'test' ? 'Zum Editor' : 'Menü', () => this.exitToMenu()),
           ),
         );
+      },
+    });
+  }
+
+  showPlaybackDone(r) {
+    const cur = this.current || {};
+    this.input.gameActive = false;
+    this.updateTouch();
+    this.menus.push({
+      title: 'Wiedergabe', overlay: true,
+      onBack: () => this.exitToMenu(),
+      build: (el) => {
+        el.append(h('h2', 'Wiedergabe beendet'),
+          h('p', `Flucht nach ${fmtTime(r.tick)} mit ${r.ghosts} Geist${r.ghosts === 1 ? '' : 'ern'} — jede Schleife wurde aus den gespeicherten Eingaben deterministisch nachsimuliert.`),
+          h('div.btnrow',
+            button('Nochmal ansehen', () => this.startLevel(cur.def, cur), { autofocus: true }),
+            button('Selbst spielen', () => this.startLevel(cur.def, { ...cur, playback: null }), { cls: 'primary' }),
+            button(cur.mode === 'test' ? 'Zum Editor' : 'Menü', () => this.exitToMenu())));
       },
     });
   }

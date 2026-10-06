@@ -132,7 +132,8 @@ export class MenuSystem {
 
 /** Convenience builders. */
 export function button(label, onClick, opts = {}) {
-  return h(`button.btn${opts.cls ? '.' + opts.cls : ''}`, { type: 'button', onclick: onClick, 'data-autofocus': opts.autofocus || null, 'aria-label': opts.aria || null, disabled: opts.disabled || null, title: opts.title || null }, label);
+  const cls = (opts.cls || '').split(/[\s.]+/).filter(Boolean).map((c) => '.' + c).join('');
+  return h(`button.btn${cls}`, { type: 'button', onclick: onClick, 'data-autofocus': opts.autofocus || null, 'aria-label': opts.aria || null, disabled: opts.disabled || null, title: opts.title || null }, label);
 }
 
 export function slider(label, value, onInput, opts = {}) {

@@ -131,8 +131,9 @@ export class Renderer2D {
 
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = '#000'; g.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    const cam = cameraFit(this.canvas.width, this.canvas.height, this.pxPerCss, fx.cam);
+    const cam = cameraFit(this.canvas.width, this.canvas.height, this.pxPerCss, fx.cam, fx.insets);
     this.scale = cam.scale; this.ox = cam.offX; this.oy = cam.offY;
+    this.offX = this.ox; this.offY = this.oy;
     const sc = this.scale;
     g.setTransform(sc, 0, 0, sc, this.ox + (fx.shakeX || 0) * sc, this.oy + (fx.shakeY || 0) * sc);
     g.drawImage(this.staticLayer, 0, 0);

@@ -238,7 +238,7 @@ export class GameSession {
   command(c) {
     if (c === 'pause') { if (this.state !== 'won') this.onEvent('pause'); return; }
     if (c === 'ffToggle') { this.input.ffLatched = !this.input.ffLatched; return; }
-    if (this.state === 'won') return;
+    if (this.state === 'won' || this.playback) return;
     if (c === 'rewind') this.rewindNow();
     else if (c === 'undo') {
       if (this.timeline.undo()) { this.hud.banner('RÜCKGÄNGIG', 'Zeitlinie wiederhergestellt', 'info'); this.audio.sfx('undo'); this.beginRewind(); }

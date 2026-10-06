@@ -391,7 +391,7 @@ export class RendererGL {
     const gl = this.gl, P = this.progs, T = this.targets, tier = this.tier;
     this.updateSdf(v, fx.state);
     const time = this.now();
-    const cam = cameraFit(this.W, this.H, this.pxPerCss, fx.cam);
+    const cam = cameraFit(this.W, this.H, this.pxPerCss, fx.cam, fx.insets);
     this.scale = cam.scale; this.offX = cam.offX; this.offY = cam.offY;
     const shX = (fx.shakeX || 0) * this.scale, shY = (fx.shakeY || 0) * this.scale;
     const offX = this.offX + shX, offY = this.offY + shY;

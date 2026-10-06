@@ -472,6 +472,7 @@ export function solve(def, opts = {}) {
   const search = (seq, depth, used) => {
     if (Date.now() > deadline) { timedOut = true; return null; }
     if (seq.length === depth) {
+      if (opts.maxSequences && stats.sequences >= opts.maxSequences) { timedOut = true; return null; }
       stats.sequences++;
       if (stats.sequences % 8 === 0) progress(stats);
       return tryFinal(seq);
