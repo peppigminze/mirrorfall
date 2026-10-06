@@ -218,8 +218,11 @@ try {
     await page.goto(BASE);
     await page.waitForTimeout(800);
     await page.evaluate(() => window.mirrorfall.showSettings());
-    await page.waitForTimeout(300);
+    // The menu focuses its first control in a rAF callback; wait until that happened.
+    await page.waitForFunction(() => document.activeElement && document.activeElement.closest('.screen'), null, { timeout: 15000 });
     await page.focus('input[aria-label="Farbenblind-Modus"]');
+    const focused = await page.evaluate(() => document.activeElement.getAttribute('aria-label'));
+    check('Einstellungen: Schalter per Tastatur fokussierbar', focused === 'Farbenblind-Modus', focused);
     await page.keyboard.press('Space');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('mirrorfall.settings.v1') || '{}').colorblind);
     check('Einstellungen: Farbenblind-Modus per Tastatur, gespeichert', saved === true);
@@ -306,17 +309,17 @@ try {
         window.mirrorfall.quality.mode = 'fixed';   // keep the tier for the measurement
       });
       await page.waitForTimeout(1500);   // skip shader compilation / warm-up
-      await page.evaluate(() => { const p = window.mirrorfall.perf; p.cpu.length = 0; p.dts.length = 0; p.frames = 0; p.sim = []; });
+      await page.evaluate(() => { const p = window.mirrorfall.perf; p.cpu.length = 0; p.dts.length = 0; p.frames = 0; p.sim = []; p.perTick = []; });
       await page.waitForTimeout(dur);
       const r = await page.evaluate(() => {
         const p = window.mirrorfall.perf, R = window.mirrorfall.renderer;
         const st = (a) => { const s = a.slice().sort((x, y) => x - y); const q = (f) => s[Math.min(s.length - 1, Math.floor(s.length * f))]; return { mean: a.reduce((x, y) => x + y, 0) / a.length, p50: q(0.5), p95: q(0.95), max: s[s.length - 1] }; };
-        return { renderer: R.kind, tier: window.mirrorfall.quality.level, px: `${R.canvas.width}x${R.canvas.height}`, frames: p.frames, dt: st(p.dts), frameJs: st(p.cpu), sim: st(p.sim) };
+        return { renderer: R.kind, tier: window.mirrorfall.quality.level, px: `${R.canvas.width}x${R.canvas.height}`, frames: p.frames, dt: st(p.dts), frameJs: st(p.cpu), sim: st(p.sim), perTick: st(p.perTick || [0]) };
       });
       const f = (x) => x.toFixed(2);
-      console.log(`  Frame-Zeiten ${cfg.padEnd(7)} ${r.renderer}/${r.tier} ${r.px}: Frames=${r.frames} | dt Ø ${f(r.dt.mean)} p95 ${f(r.dt.p95)} ms | Sim+Logik Ø ${f(r.sim.mean)} p95 ${f(r.sim.p95)} ms | Frame inkl. GL-Submit Ø ${f(r.frameJs.mean)} ms`);
+      console.log(`  Frame-Zeiten ${cfg.padEnd(7)} ${r.renderer}/${r.tier} ${r.px}: Frames=${r.frames} | dt Ø ${f(r.dt.mean)} p95 ${f(r.dt.p95)} ms | Sim+Logik pro 60-Hz-Tick Ø ${f(r.perTick.mean)} p95 ${f(r.perTick.p95)} ms | Frame inkl. GL-Submit Ø ${f(r.frameJs.mean)} ms`);
       report.runs.push({ cfg, ...r });
-      check(`Perf ${cfg}: Simulation+Spiellogik pro Frame < 4 ms (p95)`, r.sim.p95 < 4, f(r.sim.p95));
+      check(`Perf ${cfg}: Simulation+Spiellogik pro Tick < 1 ms (p95)`, r.perTick.p95 < 1, f(r.perTick.p95));
       await page.close();
     }
     writeFileSync(new URL('./perf-report.json', import.meta.url), JSON.stringify(report, null, 2) + '\n');

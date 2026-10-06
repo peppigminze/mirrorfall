@@ -96,6 +96,7 @@ export class GameSession {
     this.prevS.set(s);
     w.recordEvents = !quiet;
     step(w, buf);
+    this.ticksStepped = (this.ticksStepped || 0) + 1;
     this.liveSig[t] = sigOf(w, live);
     this.livePacked[t] = packedOf(w, live);
     this.liveAct[t] = s[this.ctx.lay.R + live * R_SIZE + R_ACT];

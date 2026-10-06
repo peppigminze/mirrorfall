@@ -108,10 +108,12 @@ export class App {
     let simMs = 0;
     if (this.editor && this.editor.active) this.editor.frame(dt);
     else if (active) {
-      const s0 = performance.now();
+      const s0 = performance.now(), k0 = active.ticksStepped || 0;
       if (this.session && !this.paused) active.update(dt);
       else if (!this.session) active.update(dt);
       simMs = performance.now() - s0;
+      const ticks = (active.ticksStepped || 0) - k0;
+      if (ticks > 0) (this.perf.perTick = this.perf.perTick || []).push(simMs / ticks);
       active.render(this.paused ? 0 : dt);
     }
     this.audio.frame(dt);
