@@ -41,6 +41,7 @@ export class App {
     this.hud = new Hud(root, this.settings);
     this.touch = new TouchControls(root, this.input);
     this.menus = new MenuSystem(root, this.input);
+    this.menus.onMove = () => this.audio.sfx('ui');
     this.fpsEl = h('div.fps');
     this.hud.el.appendChild(this.fpsEl);
     this.input.onDevice = (d) => { this.hud.setDevice(d); this.updateTouch(); };
@@ -212,6 +213,8 @@ export class App {
     this.leaveGame();
     this.menus.clearAll();
     if (!this.attract) this.startAttract();
+    this.audio.music.setLevel(0xC0FFEE, 'menu');
+    this.audio.music.setMenu(true);
     this.menus.push({
       title: 'MIRRORFALL', className: 'title',
       onBack: () => {},
