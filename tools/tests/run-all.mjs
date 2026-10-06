@@ -17,7 +17,9 @@ const tests = [
   ['Fuzz (c)', 'fuzz.mjs', [quick ? '1000' : '10000']],
   ['Daily', 'daily.mjs', [quick ? '7' : '30']],
   ['Sim-Benchmark (d)', 'bench-sim.mjs', []],
+  ['Frame-CPU-Benchmark (d)', 'bench-frame.mjs', []],
 ];
+if (process.argv.includes('--browser')) tests.push(['Browser (Playwright)', 'browser.mjs', quick ? ['--quick'] : []]);
 const results = [];
 for (const [name, file, args] of tests) {
   const t0 = Date.now();

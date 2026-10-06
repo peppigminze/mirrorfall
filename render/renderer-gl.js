@@ -440,7 +440,7 @@ export class RendererGL {
     gl.uniform1f(pr.u.uTime, time);
     gl.uniform1f(pr.u.uEnc, this.enc);
     gl.bindVertexArray(this.particleVao);
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.particles.cap);
+    this.particles.draw(time);
     gl.disable(gl.BLEND);
 
     // 2. Lights.

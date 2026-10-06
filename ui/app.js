@@ -105,18 +105,21 @@ export class App {
     const c0 = performance.now();
     this.input.poll();
     const active = this.session || this.attract;
+    let simMs = 0;
     if (this.editor && this.editor.active) this.editor.frame(dt);
     else if (active) {
+      const s0 = performance.now();
       if (this.session && !this.paused) active.update(dt);
       else if (!this.session) active.update(dt);
+      simMs = performance.now() - s0;
       active.render(this.paused ? 0 : dt);
     }
     this.audio.frame(dt);
     if (this.quality.sample(dt) && this.quality.changed) { this.quality.changed = false; this.resize(); }
     const perf = this.perf;
     perf.frames++;
-    perf.cpu.push(performance.now() - c0); perf.dts.push(rawDt * 1000);
-    if (perf.cpu.length > 600) { perf.cpu.shift(); perf.dts.shift(); }
+    perf.cpu.push(performance.now() - c0); perf.dts.push(rawDt * 1000); (perf.sim = perf.sim || []).push(simMs);
+    if (perf.cpu.length > 600) { perf.cpu.shift(); perf.dts.shift(); perf.sim.shift(); }
     if (this.settings.showFps) this.fpsEl.textContent = `${Math.round(this.quality.fps)} FPS · ${this.renderer.kind} · ${this.quality.level}`;
     requestAnimationFrame(this.frame);
   }
@@ -390,7 +393,7 @@ export class App {
   }
 
   // Replays, daily and editor are implemented in ui/screens-extra.js.
-  showReplays() { import('./screens-extra.js').then((m) => m.showReplays(this)); }
+  showReplays(prefill = '') { import('./screens-extra.js').then((m) => m.showReplays(this, prefill)); }
   showDaily() { import('./screens-extra.js').then((m) => m.showDaily(this)); }
   openEditor() { import('../tools/editor.js').then((m) => { this.editor = this.editor || new m.Editor(this); this.editor.open(); }); }
 

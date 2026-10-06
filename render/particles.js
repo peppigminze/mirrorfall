@@ -20,12 +20,25 @@ export class Particles {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
     gl.bufferData(gl.ARRAY_BUFFER, this.data.byteLength, gl.DYNAMIC_DRAW);
     this.seed = 1;
+    this.spawnLog = [];   // [time, ringIndexAfterSpawn] — to draw only the live range
+    this.maxLife = 2.5;
+  }
+
+  /** Ring range [start, count] that may still contain live particles at `now`. */
+  liveRange(now) {
+    const log = this.spawnLog;
+    while (log.length && log[0][0] < now - this.maxLife) log.shift();
+    if (!log.length) return null;
+    const first = log[0][1];
+    const count = (this.head - first + this.cap) % this.cap || this.cap;
+    return [first, Math.min(count, this.cap)];
   }
   rnd() { this.seed = (this.seed * 16807) % 2147483647; return this.seed / 2147483647; }
 
   /** Emit a preset burst. kind: spark | ring | burst | glitch | dust | trail */
   emit(kind, x, y, color, n, now, reduced) {
     if (reduced) n = Math.max(1, Math.round(n * 0.35));
+    this.spawnLog.push([now, this.head]);
     const c = [lin(color[0]), lin(color[1]), lin(color[2])];
     for (let k = 0; k < n; k++) {
       const a = this.rnd() * Math.PI * 2;
@@ -57,15 +70,28 @@ export class Particles {
     gl.bufferSubData(gl.ARRAY_BUFFER, this.dirtyLo * FLOATS * 4, this.data, this.dirtyLo * FLOATS, (this.dirtyHi - this.dirtyLo + 1) * FLOATS);
     this.dirtyLo = Infinity; this.dirtyHi = -1;
   }
-  /** Bind instance attributes 1..3 for the particle program (VAO bound). */
-  setupAttribs() {
+  /** Bind instance attributes 1..3 for the particle program (VAO bound), starting at instance `first`. */
+  setupAttribs(first = 0) {
     const gl = this.gl;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
     const stride = FLOATS * 4;
     for (let a = 1; a <= 3; a++) {
       gl.enableVertexAttribArray(a);
-      gl.vertexAttribPointer(a, 4, gl.FLOAT, false, stride, (a - 1) * 16);
+      gl.vertexAttribPointer(a, 4, gl.FLOAT, false, stride, first * stride + (a - 1) * 16);
       gl.vertexAttribDivisor(a, 1);
     }
+  }
+
+  /** Draw only the possibly-alive part of the ring (handles wrap-around). */
+  draw(now) {
+    const r = this.liveRange(now);
+    if (!r) return 0;
+    const gl = this.gl;
+    const [first, count] = r;
+    const a = Math.min(count, this.cap - first);
+    this.setupAttribs(first);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, a);
+    if (count > a) { this.setupAttribs(0); gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, count - a); }
+    return count;
   }
 }

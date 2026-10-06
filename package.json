@@ -8,6 +8,7 @@
     "start": "node tools/serve.mjs",
     "test": "node tools/tests/run-all.mjs",
     "test:quick": "node tools/tests/run-all.mjs --quick",
-    "test:browser": "node tools/tests/browser.mjs"
+    "test:browser": "node tools/tests/browser.mjs",
+    "test:all": "node tools/tests/run-all.mjs --browser"
   }
 }

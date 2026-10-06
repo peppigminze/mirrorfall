@@ -507,6 +507,7 @@ export class Editor {
 
   dialog(title, build) {
     this.app.menus.suspended = false;
+    const close = () => this.app.menus.pop();
     this.app.menus.push({
       title, overlay: true,
       onBack: () => close(),
@@ -517,6 +518,5 @@ export class Editor {
         build(box, close);
       },
     });
-    const close = () => this.app.menus.pop();
   }
 }

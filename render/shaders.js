@@ -414,9 +414,13 @@ void main() {
   vec2 dir = uv - 0.5;
   float ca = uChroma * (0.0025 + 0.010 * uRewind + 0.02 * uGlitch);
   vec3 col;
-  col.r = texture(uHdr, uv + dir * ca).r + texture(uBloom, uv + dir * ca).r * uBloomStr;
-  col.g = texture(uHdr, uv).g + texture(uBloom, uv).g * uBloomStr;
-  col.b = texture(uHdr, uv - dir * ca).b + texture(uBloom, uv - dir * ca).b * uBloomStr;
+  if (ca > 0.0) {
+    col.r = texture(uHdr, uv + dir * ca).r + texture(uBloom, uv + dir * ca).r * uBloomStr;
+    col.g = texture(uHdr, uv).g + texture(uBloom, uv).g * uBloomStr;
+    col.b = texture(uHdr, uv - dir * ca).b + texture(uBloom, uv - dir * ca).b * uBloomStr;
+  } else {
+    col = texture(uHdr, uv).rgb + texture(uBloom, uv).rgb * uBloomStr;   // cheap path (low tier)
+  }
   col *= uExposure / uEnc;
   col = aces(col);
   // grade: cool shadows, warm highlights, desaturation for rewind / pause

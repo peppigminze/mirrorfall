@@ -40,8 +40,9 @@ export function script(src, len = LOOP_TICKS) {
 
 let passed = 0, failed = 0;
 const failures = [];
+export const VERBOSE = process.argv.includes('--verbose') || process.env.MF_VERBOSE === '1';
 export function check(name, cond, detail = '') {
-  if (cond) { passed++; }
+  if (cond) { passed++; if (VERBOSE) console.log(`  ✓ ${name}`); }
   else { failed++; failures.push(`${name}${detail ? ' — ' + detail : ''}`); console.log(`  ✗ ${name} ${detail}`); }
   return cond;
 }
